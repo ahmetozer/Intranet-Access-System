@@ -8,7 +8,7 @@ const addressControlList = [
 ]
 
 function newFilterList(authCookie) {
-   let list=null
+   let list = null;
    addressControlList.forEach(element => {
       if (list == null) {
          if (otherExpressions == null) {
@@ -25,19 +25,25 @@ function newFilterList(authCookie) {
 
 
 async function handleRequest() {
+  const bodyData = {id:filterID,expression: newFilterList("aa=asdfasdf"),paused:false,description:"Restrict access from these browsers on this address range.",ref:"FIL-1003"};
+
    const init = {
-      method: 'PUT',
+      method: 'put',
      headers: {
          "content-type": "application/json;charset=UTF-8",
         "Authorization":"Bearer "+authToken,
      },
+     body: "["+JSON.stringify(bodyData)+"]",
    }
-   const response = await fetch("https://api.cloudflare.com/client/v4/zones/"+domainZone+"/firewall/rules", init)
+   const init2 = {
+     headers: {
+       "content-type": "application/json;charset=UTF-8",
+     }
+   }
+   const response = await fetch("https://api.cloudflare.com/client/v4/zones/"+domainZone+"/filters", init)
    const results = await gatherResponse(response)
-   return new Response(results, init)
+   return new Response(results, init2)
  }
-
-
 /*
 To Generate allow cookie
 */
@@ -51,12 +57,7 @@ function randomString(length) {
     return result;
 }
 
-function newExpression(expression) {
-   if (otherExpressions != undefined && otherExpressions != null && otherExpressions != "") {
-      expression = expression + " or "
-   }
-   return expression
-}
+
 async function gatherResponse(response) {
    const { headers } = response
    const contentType = headers.get("content-type") || ""
