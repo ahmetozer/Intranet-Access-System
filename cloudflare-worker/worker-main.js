@@ -1,7 +1,28 @@
 // Configure with your own settings
 const domainZone = ""
 const authToken = ""
-const otherExpressions = ""
+const otherExpressions = null
+const addressControlList = [
+   "intranet-test.ahmetozer.org/*",
+   "s.ahmetozer.org/test/bau/sen2001/access-test.html"
+]
+
+function newFilterList(authCookie) {
+   let list=null
+   addressControlList.forEach(element => {
+      if (list == null) {
+         if (otherExpressions == null) {
+            list = '(http.request.full_uri contains "'+element+'" and not http.cookie contains "'+authCookie+'")'
+         } else {
+            list = otherExpressions + ' or (http.request.full_uri contains "'+element+'" and not http.cookie contains "'+authCookie+'")'
+         }
+      } else {
+         list = list +' or (http.request.full_uri contains "'+element+'" and not http.cookie contains "'+authCookie+'")'
+      }
+   });
+   return list
+}
+
 
 async function handleRequest() {
    const init = {
