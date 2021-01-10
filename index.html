@@ -8,6 +8,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.1/css/bulma.css"
     integrity="sha512-6eqPOYQmUqGh2hFSAKha1dbQlMq1OaxityCVG80dkvGmmLdsAdrAUkgBKDV4fpAT/xOUdkB6uupudSbCwyoJPQ=="
     crossorigin="anonymous" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+    integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"
+    integrity="sha512-nOQuvD9nKirvxDdvQ9OMqe2dgapbPB7vYAMrzJihw5m+aNcf0dX53m6YxM4LgA9u8e9eg9QX+/+mPu8kCNpV2A=="
+    crossorigin="anonymous"></script>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
 </head>
 
@@ -17,7 +24,7 @@
       <div class="image"></div>
     </div>
     <div class="login column is-4 ">
-      <section class="section">
+      <form class="section" action="javascript:void(0)" id="userForm">
 
         <div class="has-text-centered">
           <h1 class="title is-1 is-spaced">Intranet Login</h1>
@@ -26,33 +33,49 @@
         <div class="field">
           <label class="label">Username</label>
           <div class="control">
-            <input class="input" type="text">
+            <input class="input" type="text" name="username" value="bob" id="username">
           </div>
         </div>
 
         <div class="field">
           <label class="label">Password</label>
           <div class="control">
-            <input class="input" type="password">
+            <input class="input" type="password" id="passwordText" value="root">
+            <input type="password" name="password" id="passwordSHA512">
           </div>
         </div>
 
         <div class="has-text-centered ">
-          <button class="button is-vcentered is-primary is-outlined">Login</button>
-          <button class="button is-vcentered is-info is-outlined" style="display: none;">Logout</button>
+          <button class="button is-vcentered is-primary is-outlined" onclick="javascript:loginAction('login')"
+            id="loginButton">Login</button>
+
+          <button class="button is-vcentered is-info is-outlined" onclick="javascript:loginAction('logout')"
+            id="logoutButton" style="display: none;">Logout</button>
+        </div>
+
+        <div class="has-text-centered" id="testingAccess" style="display:none;">
+          <progress class="progress is-warning firewallProgress" max="100" id="firewallWaiting">45%</progress>
+          <progress class="progress is-danger firewallProgress" value="100" id="firewallDanger"
+            style="display:none;">100%</progress>
+          <progress class="progress is-success firewallProgress" value="100" id="firewallSuccess"
+            style="display:none;">100%</progress>
         </div>
 
         <div class="has-text-centered">
           <p id="status"></p>
         </div>
-        
-      </section>
+
+      </form>
     </div>
   </div>
 </body>
 <footer>
   <style>
     footer {
+      display: none;
+    }
+
+    #passwordSHA512 {
       display: none;
     }
 
@@ -104,6 +127,107 @@
       margin: 0px;
     }
   </style>
+  <script>
+    var loggedInTestLoopInterval
+    // Check browser support
+    if (typeof (Storage) !== "undefined") {
+      if (typeof (localStorage.getItem("loginStatus")) !== "undefined") {
+        const loginStatus = localStorage.getItem("loginStatus")
+        if (loginStatus == "loggedIn") {
+          $("#loginButton").hide();
+          $("#logoutButton").show();
+          loggedInTestLoop(true)
+        }
+      }
+    } else {
+      $("#loginButton").prop("disabled", true);
+      $("#status").html("Sorry, your browser does not support Web Storage...")
+    }
+    function setCookie(cookieName, cookieValue) {
+      let myDate = new Date();
+      let location;
+      if (window.location.href == "/") {
+        location = window.location.hostname.substr(window.location.hostname.indexOf('.'));
+      } else {
+        location = window.location.hostname;
+      }
+      myDate.setMonth(myDate.getMonth() + 12);
+      document.cookie = cookieName + "=" + cookieValue + ";expires=" + myDate
+        + ";domain=" + window.location.hostname.substr(window.location.hostname.indexOf('.')) + ";path=/";
+    }
+
+    function loginAction(actionType) {
+      if (actionType == "login") {
+        $("#passwordSHA512").val(CryptoJS.SHA512($("#passwordText").val()).toString())
+        $("#loginButton").prop("disabled", true);
+        const username = $("#username").val()
+        loggedInTestLoop(true)
+        $.post("/edge-auth/req", $("#userForm").serialize())
+          .done(function (data) {
+            if (data.success == true) {
+              setCookie("firewallToken-" + username, data.cookieKey)
+              localStorage.setItem("loginStatus", "loggedIn");
+              $("#loginButton").hide();
+              $("#logoutButton").show();
+            } else {
+              localStorage.setItem("loginStatus", "loggedInError");
+              $("#loginButton").show();
+              $("#logoutButton").hide();
+            }
+            $("#status").html(data.status)
+            $("#loginButton").prop("disabled", false);
+          })
+          .fail(function (xhr, status, error) {
+            // error handling
+            $("#loginButton").prop("disabled", false);
+          });
+      } else {
+        console.log("logout")
+        loggedInTestLoop(false)
+        $("#loginButton").show();
+        $("#logoutButton").hide();
+        localStorage.setItem("loginStatus", "loggedOut");
+      }
+
+    }
+
+    function loggedInTestLoop(stat) {
+      if (stat == true) {
+        $("#testingAccess").show();
+        loggedInTest();
+        loggedInTestLoopInterval = setInterval(function () {
+          loggedInTest();
+        }, 3000);
+      } else {
+        $("#testingAccess").hide();
+        clearInterval(loggedInTestLoopInterval);
+      }
+
+    }
+
+    function loggedInTest() {
+      $.ajax({
+        url: "/edge-auth/test",
+        success: function (data) {
+          $(".firewallProgress").hide();
+          $("#firewallSuccess").show();
+        },
+        error: function (xhr, status, error) {
+          if (xhr.status == 404 || xhr.status == 200) {
+            $(".firewallProgress").hide();
+            $("#firewallSuccess").show();
+          } else if (xhr.status == 403) {
+            $(".firewallProgress").hide();
+            $("#firewallWaiting").show();
+          } else {
+            $(".firewallProgress").hide();
+            $("#firewallDanger").show();
+          }
+        },
+        timeout: 2900 //in milliseconds
+      });
+    }
+  </script>
 </footer>
 
 </html>
