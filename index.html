@@ -181,6 +181,7 @@
               localStorage.setItem("loginStatus", "loggedInError");
               $("#loginButton").show();
               $("#logoutButton").hide();
+              loggedInTestLoop(false)
             }
             $("#status").html(data.status)
         },
