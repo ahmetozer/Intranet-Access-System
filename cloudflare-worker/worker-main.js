@@ -8,9 +8,9 @@ const addressControlList = [
 ];
 
 const usernamePassword = {
-  // MD5
-  bob: "63a9f0ea7bb98050796b649e85481845", // root
-  john: "7b24afc8bc80e548d66c4e7ff72171c5", // toor
+  // SHA512
+  bob: "99adc231b045331e514a516b4b7680f588e3823213abe901738bc3ad67b2f6fcb3c64efb93d18002588d3ccc1a49efbae1ce20cb43df36b38651f11fa75678e8", // root
+  john: "2b64f2e3f9fee1942af9ff60d40aa5a719db33b8ba8dd4864bb4f11e25ca2bee00907de32a59429602336cac832c8f2eeff5177cc14c864dd116c8bf6ca5d9a9", // toor
 };
 
 addEventListener("fetch", (event) => {
@@ -22,7 +22,12 @@ function newFilterList(authCookie, request) {
   let list = null;
   addressControlList.forEach((element) => {
     //let authRule = '(http.request.full_uri contains "'+element+'" and not http.cookie contains "'+authCookie+'" and not ip.src in {'+ clientIP +'} )'
-    let authRule =
+    let firewallTestRule = '(http.request.full_uri contains "' +
+    "/edge-auth/test" +
+    '" and not http.cookie contains "' +
+    authCookie +
+    '" ) or ';
+    let authRule = 
       '(http.request.full_uri contains "' +
       element +
       '" and not http.cookie contains "' +
@@ -30,9 +35,9 @@ function newFilterList(authCookie, request) {
       '" )';
     if (list == null) {
       if (otherExpressions == null) {
-        list = "" + authRule;
+        list = firewallTestRule + authRule;
       } else {
-        list = otherExpressions + " or " + authRule;
+        list = otherExpressions + " or " + firewallTestRule + authRule;
       }
     } else {
       list = list + " or " + authRule;
@@ -63,7 +68,7 @@ async function handleRequest(request) {
     const edgeAuthToken = randomString(50);
     const bodyData = {
       id: filterID,
-      expression: newFilterList(username + "=" + edgeAuthToken, request),
+      expression: newFilterList("firewallToken-"+username + "=" + edgeAuthToken, request),
       paused: false,
       description: "Restrict access from these browsers on this address range.",
       ref: "FIL-1003",
