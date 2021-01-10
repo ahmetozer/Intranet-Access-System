@@ -182,6 +182,7 @@
               $("#loginButton").show();
               $("#logoutButton").hide();
               loggedInTestLoop(false)
+              $("#loginButton").prop("disabled", false);
             }
             $("#status").html(data.status)
         },
