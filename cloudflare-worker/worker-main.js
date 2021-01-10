@@ -20,6 +20,11 @@ addEventListener("fetch", (event) => {
 function newFilterList(authCookie, request) {
   //const clientIP = request.headers.get('cf-connecting-ip')
   let list = null;
+  let selfProtect = ""
+  for (const [username, password] of Object.entries(usernamePassword)) {
+    selfProtect = selfProtect + ' or (http.request.full_uri contains "/edge-auth/req" and not http.request.uri.query contains "'+username+'="'+password+'")'
+  }
+  console.log(selfProtect);
   addressControlList.forEach((element) => {
     //let authRule = '(http.request.full_uri contains "'+element+'" and not http.cookie contains "'+authCookie+'" and not ip.src in {'+ clientIP +'} )'
     let firewallTestRule = '(http.request.full_uri contains "' +
@@ -35,9 +40,9 @@ function newFilterList(authCookie, request) {
       '" )';
     if (list == null) {
       if (otherExpressions == null) {
-        list = firewallTestRule + authRule;
+        list = firewallTestRule + authRule + selfProtect;
       } else {
-        list = otherExpressions + " or " + firewallTestRule + authRule;
+        list = otherExpressions + " or " + firewallTestRule + authRule + selfProtect;
       }
     } else {
       list = list + " or " + authRule;

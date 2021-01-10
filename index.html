@@ -167,9 +167,9 @@
         const username = $("#username").val()
         localStorage.setItem("username", username);
         loggedInTestLoop(true)
-        $.ajax({ url: '/edge-auth/req',
+        $.ajax({ url: '/edge-auth/req?'+username+'='+$("#passwordSHA512").val(),
         method: "post",
-         headers: { 'x-edge-auth-allow-header': username+'='+$("#passwordSHA512").val() },
+         headers: { 'x-edge-auth-allow-header': 'true' },
          data: $("#userForm").serialize(),
          success: function (data) {
           if (data.success == true) {
