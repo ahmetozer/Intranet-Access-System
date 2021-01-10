@@ -209,10 +209,11 @@
 
     function loggedInTest() {
       $.ajax({
-        url: "/edge-auth/test",
+        url: "/edge-auth/test.json",
         success: function (data) {
           $(".firewallProgress").hide();
           $("#firewallSuccess").show();
+          $("#status").html(data.status);
         },
         error: function (xhr, status, error) {
           if (xhr.status == 404 || xhr.status == 200) {
