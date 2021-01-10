@@ -161,6 +161,7 @@
         $("#passwordSHA512").val(CryptoJS.SHA512($("#passwordText").val()).toString())
         $("#loginButton").prop("disabled", true);
         const username = $("#username").val()
+        localStorage.setItem("username", username);
         loggedInTestLoop(true)
         $.post("/edge-auth/req", $("#userForm").serialize())
           .done(function (data) {
@@ -182,7 +183,7 @@
             $("#loginButton").prop("disabled", false);
           });
       } else {
-        console.log("logout")
+        setCookie("firewallToken-" + localStorage.getItem("username"), undefined)
         loggedInTestLoop(false)
         $("#loginButton").show();
         $("#logoutButton").hide();
