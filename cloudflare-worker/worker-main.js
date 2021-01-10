@@ -23,7 +23,7 @@ function newFilterList(authCookie, request) {
   addressControlList.forEach((element) => {
     //let authRule = '(http.request.full_uri contains "'+element+'" and not http.cookie contains "'+authCookie+'" and not ip.src in {'+ clientIP +'} )'
     let firewallTestRule = '(http.request.full_uri contains "' +
-    "/edge-auth/test" +
+    "/edge-auth/test.json" +
     '" and not http.cookie contains "' +
     authCookie +
     '" ) or ';
