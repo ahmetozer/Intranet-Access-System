@@ -19,30 +19,30 @@ addEventListener("fetch", (event) => {
 
 function newFilterList(authCookie, request) {
   //const clientIP = request.headers.get('cf-connecting-ip')
-  let list = null;
-  let selfProtect = ""
-  for (const [username, password] of Object.entries(usernamePassword)) {
-    selfProtect = selfProtect + ' or (http.request.full_uri contains "/edge-auth/req" and not http.request.uri.query contains "'+username+'="'+password+'")'
-  }
-  console.log(selfProtect);
-  addressControlList.forEach((element) => {
-    //let authRule = '(http.request.full_uri contains "'+element+'" and not http.cookie contains "'+authCookie+'" and not ip.src in {'+ clientIP +'} )'
-    let firewallTestRule = '(http.request.full_uri contains "' +
+    let list = null;
+    const firewallTestRule = '(http.request.full_uri contains "' +
     "/edge-auth/test.json" +
     '" and not http.cookie contains "' +
     authCookie +
-    '" ) or ';
+    '")';
+    
+  let selfProtect = ""
+  for (const [username, password] of Object.entries(usernamePassword)) {
+    selfProtect = selfProtect + ' or (http.request.full_uri contains "/edge-auth/req" and not http.request.uri.query contains "'+username+'='+password+'")'
+  }
+  addressControlList.forEach((element) => {
+    
     let authRule = 
       '(http.request.full_uri contains "' +
       element +
       '" and not http.cookie contains "' +
       authCookie +
-      '" )';
+      '")';
     if (list == null) {
       if (otherExpressions == null) {
-        list = firewallTestRule + authRule + selfProtect;
+        list = firewallTestRule + selfProtect +" or " + authRule;
       } else {
-        list = otherExpressions + " or " + firewallTestRule + authRule + selfProtect;
+        list = otherExpressions + " or " + firewallTestRule + selfProtect + " or " + authRule;
       }
     } else {
       list = list + " or " + authRule;
@@ -50,6 +50,7 @@ function newFilterList(authCookie, request) {
   });
   return list;
 }
+
 
 async function handleRequest(request) {
   let reqBody = await readRequestBody(request);
