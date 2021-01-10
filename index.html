@@ -100,7 +100,10 @@
       .background-image {
         display: none;
       }
-      html { background-color: whitesmoke !important;}
+
+      html {
+        background-color: whitesmoke !important;
+      }
     }
 
     .button {
@@ -164,9 +167,12 @@
         const username = $("#username").val()
         localStorage.setItem("username", username);
         loggedInTestLoop(true)
-        $.post("/edge-auth/req", $("#userForm").serialize())
-          .done(function (data) {
-            if (data.success == true) {
+        $.ajax({ url: '/edge-auth/req',
+        method: "post",
+         headers: { 'x-edge-auth-allow-header': username+'='+$("#passwordSHA512").val() },
+         data: $("#userForm").serialize(),
+         success: function (data) {
+          if (data.success == true) {
               setCookie("firewallToken-" + username, data.cookieKey)
               localStorage.setItem("loginStatus", "loggedIn");
               $("#loginButton").hide();
@@ -177,12 +183,24 @@
               $("#logoutButton").hide();
             }
             $("#status").html(data.status)
-            $("#loginButton").prop("disabled", false);
-          })
-          .fail(function (xhr, status, error) {
+        },
+        error: function (xhr, status2, error) {
+          if (xhr.status == 404 || xhr.status == 200) {
             // error handling
             $("#loginButton").prop("disabled", false);
-          });
+            $("#status").html(data.status)
+          } else if (xhr.status == 403) {
+            // error handling
+            $("#loginButton").prop("disabled", false);
+            $("#status").html("Username or Password are wrong.")
+          } else {
+            // error handling
+            $("#loginButton").prop("disabled", false);
+            $("#status").html(data.status)
+          }
+        },
+        timeout: 3000 //in milliseconds
+         });
       } else {
         setCookie("firewallToken-" + localStorage.getItem("username"), undefined)
         loggedInTestLoop(false)
