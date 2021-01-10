@@ -199,7 +199,7 @@
         loggedInTest();
         loggedInTestLoopInterval = setInterval(function () {
           loggedInTest();
-        }, 3000);
+        }, 5000);
       } else {
         $("#testingAccess").hide();
         clearInterval(loggedInTestLoopInterval);
@@ -226,7 +226,7 @@
             $("#firewallDanger").show();
           }
         },
-        timeout: 2900 //in milliseconds
+        timeout: 3000 //in milliseconds
       });
     }
   </script>
